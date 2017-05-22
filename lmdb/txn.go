@@ -3,6 +3,7 @@ package lmdb
 /*
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include "lmdb.h"
 #include "lmdbgo.h"
 */
@@ -334,8 +335,14 @@ func (txn *Txn) OpenRoot(flags uint) (DBI, error) {
 // database.
 func (txn *Txn) openDBI(cname *C.char, flags uint) (DBI, error) {
 	var dbi C.MDB_dbi
-	ret := C.mdb_dbi_open(txn._txn, cname, C.uint(flags), &dbi)
+	if C.strlen(cname) > 0 {
+		ret := C.mdb_dbi_open(txn._txn, cname, C.uint(flags), &dbi)
+		return DBI(dbi), operrno("mdb_dbi_open", ret)
+	}
+
+	ret := C.mdb_dbi_open(txn._txn, nil, C.uint(flags), &dbi)
 	return DBI(dbi), operrno("mdb_dbi_open", ret)
+
 }
 
 // Stat returns a Stat describing the database dbi.
